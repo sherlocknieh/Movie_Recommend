@@ -3,7 +3,8 @@ import requests
 import time
 
 # TMDB API配置
-API_KEY = "YOUR_API_KEY"  # 替换成您的TMDB API密钥
+with open(".API_KEY", 'w') as f:
+    API_KEY = f.read().strip()
 BASE_URL = "https://api.themoviedb.org/3"
 
 def get_movie_details(tmdb_id):
