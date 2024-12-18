@@ -55,12 +55,12 @@
     <h1>电影列表</h1>
     <div class="movie-grid">
         {% for movie in movies %}
-        <div class="movie-card" onclick="window.location.href='/movie/{{ movie.ID }}'">
+        <div class="movie-card" onclick="window.location.href='/movie/{{ movie.movieId }}'">
             <img class="movie-poster" src="{{ movie.poster_path }}" alt="{{ movie.Title }}" 
                  onerror="this.src='https://via.placeholder.com/300x450.png?text=No+Poster'">
             <div class="movie-info">
-                <div class="movie-title">{{ movie.Title }}</div>
-                <div class="movie-year">{{ movie.Year }}</div>
+                <div class="movie-title">{{ movie.title }}</div>
+                <div class="movie-year">{{ movie.release_date }}</div>
                 <div class="movie-rating">评分: {{ movie.vote_average }}</div>
             </div>
         </div>

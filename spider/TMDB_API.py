@@ -5,7 +5,7 @@ import time
 # 文件路径
 input_file   = "data/links.csv"
 output_file  = "data/movies_details.csv"
-api_key_file = "crawler/.API_KEY"
+api_key_file = "spider/.API_KEY"
 
 # TMDB API配置
 with open(api_key_file, 'r') as f:

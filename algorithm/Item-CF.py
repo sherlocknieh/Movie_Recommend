@@ -1,6 +1,6 @@
 # 基于物品的协同过滤算法
 # 输入：用户-电影-评分数据集: data/ratings.csv
-# 输出：电影-电影-相似度数据: data/movie_similarity.csv
+# 输出：电影-电影-相似度数据: data/similarity.csv
 
 import numpy as np
 import pandas as pd
