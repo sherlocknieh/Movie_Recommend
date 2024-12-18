@@ -2,8 +2,13 @@ import pandas as pd
 import requests
 import time
 
+# 文件路径
+input_file   = "data/links.csv"
+output_file  = "data/movies_details.csv"
+api_key_file = "crawler/.API_KEY"
+
 # TMDB API配置
-with open(".API_KEY", 'w') as f:
+with open(api_key_file, 'r') as f:
     API_KEY = f.read().strip()
 BASE_URL = "https://api.themoviedb.org/3"
 
@@ -35,7 +40,7 @@ def get_movie_details(tmdb_id):
 
 def main():
     # 读取CSV文件
-    df = pd.read_csv('movies.csv')
+    df = pd.read_csv('links.csv')
     
     # 创建新的列来存储电影信息
     movie_details = []
@@ -53,8 +58,8 @@ def main():
     result_df = pd.concat([df, movie_info_df], axis=1)
     
     # 保存结果到新的CSV文件
-    result_df.to_csv('movies_with_details.csv', index=False)
-    print("处理完成！结果已保存到 movies_with_details.csv")
+    result_df.to_csv('movies_details.csv', index=False)
+    print("处理完成！结果已保存到 movies_details.csv")
 
 if __name__ == "__main__":
     main()

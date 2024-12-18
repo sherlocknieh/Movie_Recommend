@@ -1,3 +1,9 @@
+# 电影信息爬取脚本
+
+# 文件路径
+input_file   = "data/links.csv"
+output_file  = "data/movies_details.csv"
+
 from bs4 import BeautifulSoup
 import pandas as pd
 import requests
@@ -5,7 +11,6 @@ import random
 import time
 
 def get_movie_details_bs4(tmdb_id):
-    """使用BeautifulSoup爬取TMDB电影详细信息"""
     url = f"https://www.themoviedb.org/movie/{tmdb_id}"
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',

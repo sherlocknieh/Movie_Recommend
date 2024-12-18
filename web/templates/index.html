@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>电影列表</title>
+    <style>
+        .movie-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+        
+        .movie-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            transition: transform 0.2s;
+            cursor: pointer;
+        }
+        
+        .movie-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .movie-poster {
+            width: 100%;
+            height: 300px;
+            object-fit: cover;
+        }
+        
+        .movie-info {
+            padding: 10px;
+        }
+        
+        .movie-title {
+            font-size: 1.1em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .movie-year {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>电影列表</h1>
+    <div class="movie-grid">
+        {% for movie in movies %}
+        <div class="movie-card" onclick="window.location.href='/movie/{{ movie.ID }}'">
+            <img class="movie-poster" src="{{ movie.poster_path }}" alt="{{ movie.Title }}" 
+                 onerror="this.src='https://via.placeholder.com/300x450.png?text=No+Poster'">
+            <div class="movie-info">
+                <div class="movie-title">{{ movie.Title }}</div>
+                <div class="movie-year">{{ movie.Year }}</div>
+                <div class="movie-rating">评分: {{ movie.vote_average }}</div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</body>
+</html> 
