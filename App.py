@@ -4,8 +4,8 @@ import random
 from functools import lru_cache
 
 # 文件路径
-movie_details_path = 'data/movies_details.csv'
-movie_similarities_path = 'data/similarities.csv'
+movie_details_path = 'output/movies_details.csv'
+movie_similarities_path = 'output/similarities.csv'
 
 app = Flask(__name__)
 
