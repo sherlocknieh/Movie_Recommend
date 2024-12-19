@@ -2,7 +2,7 @@
 
 # 文件路径
 input_file   = "data/links.csv"
-output_file  = "data/movies_details.csv"
+output_file  = ("data/movies_inf.csv")
 
 from bs4 import BeautifulSoup
 import pandas as pd
