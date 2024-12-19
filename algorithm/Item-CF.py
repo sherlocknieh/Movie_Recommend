@@ -47,7 +47,7 @@ def get_items_similarity(df, item_num):
             W[i][j] /= np.sqrt(count_item_users_num.get(i + 1) * count_item_users_num.get(j + 1))
     #W_df = pd.DataFrame(W, index=movie_id_map.values(), columns=movie_id_map.values())
     W_df = pd.DataFrame(W, index=list(movie_id_map_inv.values()), columns=list(movie_id_map_inv.values()))
-    W_df.to_csv('/home/hadoop/similarity_matrix.csv')
+    #W_df.to_csv('/home/hadoop/similarity_matrix.csv')
     print(W)
     # 将稀疏矩阵转换为长格式数据框
     long_format_df = W_df.stack().reset_index()
@@ -64,13 +64,13 @@ def get_items_similarity(df, item_num):
     long_format_df.reset_index(drop=True, inplace=True)
 
     # （可选）根据相似度排序
-    long_format_df.sort_values(by='Similarity', ascending=False, inplace=True)
+    #  long_format_df.sort_values(by='Similarity', ascending=False, inplace=True)
 
     # 查看结果
     print(long_format_df)
 
     # 如果需要，可以将结果保存到CSV文件
-    long_format_df.to_csv('/home/hadoop/movie_similarity_pairs.csv', index=False)
+    long_format_df.to_csv('data/movie_similarity_pairs.csv', index=False)
 
 
     return long_format_df, movie_id_map, movie_id_map_inv
@@ -106,7 +106,8 @@ def get_user_interest_list(user_id, K, user_rating, w_dict, movie_id_map_inv):
 
 if __name__ == '__main__':
 
-    df = pd.read_csv('../data/ratings.csv')
+    df = pd.read_csv('data/ratings.csv')
+    # 
     item_num = df.movieId.nunique()
     user_rating = trans_df2dict(df)
     W, movie_id_map, movie_id_map_inv = get_items_similarity(df, item_num)

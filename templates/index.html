@@ -1,70 +1,107 @@
 <!DOCTYPE html>
-<html>
+<html lang="zh">
 <head>
-    <title>电影列表</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>电影推荐系统</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <style>
-        .movie-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 20px;
-            padding: 20px;
-        }
-        
         .movie-card {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            overflow: hidden;
             transition: transform 0.2s;
-            cursor: pointer;
         }
-        
         .movie-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: scale(1.05);
         }
-        
         .movie-poster {
-            width: 100%;
-            height: 300px;
+            height: 250px;
             object-fit: cover;
         }
-        
-        .movie-info {
-            padding: 10px;
+        .section-title {
+            border-left: 4px solid #0d6efd;
+            padding-left: 10px;
+            margin: 30px 0 20px 0;
         }
-        
-        .movie-title {
-            font-size: 1.1em;
-            font-weight: bold;
-            margin-bottom: 5px;
+        .card-body {
+            padding: 0.8rem;
         }
-        
-        .movie-year {
-            color: #666;
-            font-size: 0.9em;
+        .card-title {
+            font-size: 0.9rem;
+            margin-bottom: 0.3rem;
         }
-
-        h1 {
-            text-align: center;
-            color: #333;
-            margin: 20px 0;
+        .card-text {
+            font-size: 0.8rem;
+            margin-bottom: 0;
         }
     </style>
 </head>
 <body>
-    <h1>电影列表</h1>
-    <div class="movie-grid">
-        {% for movie in movies %}
-        <div class="movie-card" onclick="window.location.href='/movie/{{ movie.movieId }}'">
-            <img class="movie-poster" src="{{ movie.poster_path }}" alt="{{ movie.Title }}" 
-                 onerror="this.src='https://via.placeholder.com/300x450.png?text=No+Poster'">
-            <div class="movie-info">
-                <div class="movie-title">{{ movie.title }}</div>
-                <div class="movie-year">{{ movie.release_date }}</div>
-                <div class="movie-rating">评分: {{ movie.vote_average }}</div>
+    <div class="container mt-4">
+        <h1 class="text-center mb-4">电影推荐系统</h1>
+
+        <!-- 搜索框 -->
+        <div class="row justify-content-center mb-4">
+            <div class="col-md-6">
+                <form action="/search" method="get" class="d-flex">
+                    <input type="search" name="query" class="form-control me-2" 
+                           placeholder="搜索电影..." value="{{ query if query is defined else '' }}">
+                    <button type="submit" class="btn btn-primary">搜索</button>
+                </form>
             </div>
         </div>
-        {% endfor %}
+
+        <!-- 导航栏 -->
+        <ul class="nav nav-pills justify-content-center mb-4">
+            <li class="nav-item">
+                <a class="nav-link {{ 'active' if category == 'popular' }}" href="/">热门电影</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ 'active' if category == 'top_rated' }}" href="/top_rated">高分电影</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ 'active' if category == 'latest' }}" href="/latest">最新电影</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {{ 'active' if category == 'random' }}" href="/random">随机推荐</a>
+            </li>
+        </ul>
+
+        <!-- 电影列表 -->
+        <h2 class="section-title">{{ title }}</h2>
+        {% if movies %}
+        <div class="row row-cols-2 row-cols-md-6 g-3">
+            {% for movie in movies %}
+            <div class="col">
+                <a href="/movie/{{ movie.movieId }}" class="text-decoration-none">
+                    <div class="card h-100 movie-card">
+                        <img src="{{ movie.poster_path }}" class="card-img-top movie-poster" alt="{{ movie.title }}">
+                        <div class="card-body">
+                            <h5 class="card-title text-dark">{{ movie.title }}</h5>
+                            {% if category == 'top_rated' %}
+                            <p class="card-text text-muted">评分: {{ movie.vote_average }}/100</p>
+                            {% elif category == 'latest' %}
+                            <p class="card-text text-muted">上映日期: {{ movie.release_date }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </a>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="text-center text-muted mt-5">
+            {% if category == 'search' %}
+                {% if query %}
+                    <p>没有找到相关电影</p>
+                {% else %}
+                    <p>请输入搜索关键词</p>
+                {% endif %}
+            {% else %}
+                <p>暂无电影</p>
+            {% endif %}
+        </div>
+        {% endif %}
     </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html> 
