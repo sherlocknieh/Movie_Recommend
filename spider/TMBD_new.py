@@ -108,18 +108,7 @@ def news_save(text):
                 if len(word) != 0:
                     txt_file.write(word + '\n\n')
 
-#def title_save(text):
-#    import json
-#    with open(r'title.txt', 'a', encoding='utf-8') as txt_file:
-#        for element in text:
-#            if len(element) != 0:
-#                txt_file.write(element + '\n\n')
-
 if __name__ == '__main__':
-#    url = 'https://cs.xmu.edu.cn/';
-#    html = get_html(url)
-#    text = get_soup(html)
-#    news_save(text)
     csv_outfilename = "movie_inf.csv"
     csv_infilename = "links.csv"
     links = generate_movie_links(csv_infilename)
