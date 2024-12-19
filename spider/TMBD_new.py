@@ -1,8 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
-import csv
-#request
-User_Agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36 Edg/129.0.0.0,';
+from requests import ReadTimeout, ConnectTimeout
+
+User_Agent = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/129.0.0.0 Safari/537.36 Edg/129.0.0.0,'
 headers = {'User-Agent': User_Agent,'Accept-Language':'zh-CN,zh;q=0.9,en;q=0.8,en-GB;q=0.7,en-US;q=0.6'}
 
 import csv
@@ -26,7 +26,7 @@ def soup_read_movies(soup_web):
     ans = ""
     mov_road = '#original_header > div.header_poster_wrapper.false > section > div.title.ott_false > h2 > a'
     mov_soup = soup_web.select(mov_road)
-    mov_real = mov_soup[0].get_text();
+    mov_real = mov_soup[0].get_text()
     ans = mov_real
     return ans
 
@@ -38,7 +38,7 @@ def soup_read_director(soup_web):
     for div in dir_soup:
         divs = div.select('a')
         #print(divs)
-        div_real = divs[0].get_text();
+        div_real = divs[0].get_text()
         ans = div_real
 
     return ans
@@ -47,7 +47,7 @@ def soup_read_subsciption(soup_web):
     ans = ""
     sub_road = '#original_header > div.header_poster_wrapper.false > section > div.header_info > div > p'
     sub_soup = soup_web.select(sub_road)
-    div_real = sub_soup[0].get_text();
+    div_real = sub_soup[0].get_text()
     ans = div_real
     return ans
 
@@ -62,7 +62,6 @@ def soup_read_images(soup_web):
 
 def movie_get(movie_link):
     web = movie_link
-    #print(web)
     try:
         response = requests.get(web, headers=headers,timeout=10);
     except ReadTimeout or ConnectTimeout:
@@ -78,11 +77,9 @@ def movie_get(movie_link):
 
     director = soup_read_director(soup_web)
     line.append(director)
-    #print(director)
 
     subsciption = soup_read_subsciption(soup_web)
     line.append(subsciption)
-    #print(subsciption)
 
     images = soup_read_images(soup_web)
     line.append(images)
@@ -101,7 +98,6 @@ def append_links_to_csv(file_path, links):
 
 
 def news_save(text):
-    import json
     with open(r'news.txt', 'a', encoding='utf-8') as txt_file:
         for element in text:
             for word in element:
@@ -113,7 +109,6 @@ if __name__ == '__main__':
     csv_infilename = "links.csv"
     links = generate_movie_links(csv_infilename)
     links = links[1:]
-    #print(links)
     for i in range(len(links)):
         imf = movie_get(links[i])
         imf.insert(0,str(i))
