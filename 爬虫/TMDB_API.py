@@ -1,17 +1,15 @@
 import pandas as pd
 import requests
+import sqlite3
 import time
 
-# 文件路径
-input_file   = "data/links.csv"
-output_file  = "data/movies_details.csv"
-api_key_file = "spider/.API_KEY"
 
-# TMDB API配置
-with open(api_key_file, 'r') as f:
-    API_KEY = f.read().strip()
+data_base_path = "数据库/output/movies.db"
 BASE_URL = "https://api.themoviedb.org/3"
+API_KEY = "49b0d7cb820dde8476b350f3bd577342"
 
+
+# 获取电影详细信息
 def get_movie_details(tmdb_id):
     """获取电影详细信息"""
     endpoint = f"{BASE_URL}/movie/{tmdb_id}"
@@ -21,15 +19,16 @@ def get_movie_details(tmdb_id):
     }
     
     try:
-        response = requests.get(endpoint, params=params)
+        response = requests.get(endpoint, params=params, timeout=30)
         if response.status_code == 200:
             data = response.json()
             return {
-                'title': data.get('title'),
-                'overview': data.get('overview'),
+                'title_CN': data.get('title'),
                 'release_date': data.get('release_date'),
+                'vote_average': data.get('vote_average'),
+                'vote_count': data.get('vote_count'),
                 'poster_path': f"https://image.tmdb.org/t/p/w500{data.get('poster_path')}" if data.get('poster_path') else None,
-                'vote_average': data.get('vote_average')
+                'overview': data.get('overview')
             }
         else:
             print(f"获取电影ID {tmdb_id} 失败: {response.status_code}")
@@ -39,27 +38,34 @@ def get_movie_details(tmdb_id):
         return None
 
 def main():
-    # 读取CSV文件
-    df = pd.read_csv('links.csv')
+
+    # 加载数据库
+    conn = sqlite3.connect(data_base_path)
+    cursor = conn.cursor()
+
+    df1 = pd.read_sql_query("SELECT * FROM movies_basic", conn)    # 读取 movies_basic 表, 获取所有电影ID和TMDBID
+    df2 = pd.read_sql_query("SELECT * FROM movies_detail", conn)   # 读取 movies_detail 表, 获取已完成的电影信息
     
-    # 创建新的列来存储电影信息
-    movie_details = []
-    
-    # 遍历每个电影ID
-    for tmdb_id in df['tmdbId']:
-        details = get_movie_details(tmdb_id)
-        movie_details.append(details)
-        time.sleep(0.25)  # 添加延迟以避免超过API速率限制
-    
-    # 将获取的信息添加到数据框
-    movie_info_df = pd.DataFrame(movie_details)
-    
-    # 合并原始数据框和新信息
-    result_df = pd.concat([df, movie_info_df], axis=1)
-    
-    # 保存结果到新的CSV文件
-    result_df.to_csv('movies_details.csv', index=False)
-    print("处理完成！结果已保存到 movies_details.csv")
+    # 遍历 df1 中的每一行
+    for _, row in df1.iterrows():
+        tmdb_id = row['tmdbId']
+        movieid = row['movieId']
+        if movieid in df2['movieId'].values:  # 已有详细信息, 跳过
+            continue
+        else:
+            # 获取详细信息
+            details = get_movie_details(tmdb_id)
+            if details:
+                # 保存详细信息到数据库
+                df = pd.DataFrame([details], columns=list(details.keys()))
+                df['movieId'] = movieid
+                df.to_sql('movies_detail', conn, if_exists='append', index=False)
+                print(f"[+保存成功] [ID:{movieid}]《{details['title_CN']}》({details['release_date'][:4]})\t评分: {details['vote_average']}")
+            else:
+                print(f"[*保存失败] [ID:{movieid}] ")
+                continue
+            time.sleep(0.25)   # 避免请求过快, TMDB_API 限制每10秒钟请求不超过40次
+    conn.close()
 
 if __name__ == "__main__":
     main()

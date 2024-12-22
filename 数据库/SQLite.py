@@ -3,9 +3,11 @@ import sqlite3
 
 
 # 相关文件路径
-demo_data = '.TEST/demo.db'
-movies_data = '数据库/movies.db'
-similarity_data = '数据库/similarities.db'
+input_file1 = '数据库/input/links.csv'
+input_file2 = '数据库/input/movies.csv'
+movies_data = '数据库/output/movies.db'
+similarity_data = '数据库/output/similarities.db'
+demo_data   = '.Test/demo.db'
 
 
 # SQLite 用法示例
@@ -64,7 +66,10 @@ def creat_similarities_sqlite():
     # 打开/创建数据库
     conn = sqlite3.connect(similarity_data)
     
-    # 创建 similarities 表格(如果不存在则创建)
+    # 删除旧的 similarities 表
+    conn.execute('DROP TABLE IF EXISTS similarities')
+
+    # 创建新的 similarities 表
     conn.execute('''CREATE TABLE IF NOT EXISTS similarities (
                    movieId1     INT,
                    movieId2     INT,
@@ -79,11 +84,8 @@ def creat_similarities_sqlite():
 
 
 # 建立 movies.db 数据库
-def creat_movies_sqlite():
-
-    # 相关文件路径
-    input_file1 = '数据库/input/links.csv'
-    input_file2 = '数据库/input/movies.csv'
+# 1. 合并 links.csv 和 movies.csv 文件到 movies_basic 表
+def creat_movies_basic_table():
 
     # 创建 movies.db 数据库并打开
     conn = sqlite3.connect(movies_data)      
@@ -98,10 +100,24 @@ def creat_movies_sqlite():
     # 写入 movies_basic 表
     df.to_sql('movies_basic', conn, if_exists='replace', index=False)
 
+    # 提交修改
+    conn.commit()
+    
+    # 关闭数据库
+    conn.close()
+
+# 2. 手动创建 movies_detail 表格
+def creat_movies_detail_table():
+    
+    # 打开 movies.db 数据库
+    conn = sqlite3.connect(movies_data)  
+
+    # 删除旧的 movies_detail 表
+    conn.execute('DROP TABLE IF EXISTS movies_detail')
 
     # 新建 movies_detail 表
     conn.execute('''CREATE TABLE IF NOT EXISTS movies_detail (
-                   movie_id     INT,
+                   movieId      INT,
                    title_CN     TEXT,
                    release_date TEXT,
                    vote_average REAL,
@@ -115,30 +131,51 @@ def creat_movies_sqlite():
     
     # 关闭数据库
     conn.close()
-    
 
-# 查看数据库中的表格
+
+# 打印表格数据
 def print_table(file_path,table_name):
     
-    conn = sqlite3.connect(file_path)
-    cursor = conn.cursor() # 创建游标, 用于逐行处理数据
+    conn = sqlite3.connect(file_path)  # 打开数据库
+    df = pd.read_sql_query(f'SELECT * FROM {table_name}', conn)  # 加载所有数据
+    print(f'\n[{table_name}]: \n')  # 打印表格名称
+    print(df.head(5))    #打印前 5 行数据
+    print(df.tail(5))    #打印末 5 行数据
 
-    df = pd.read_sql_query(f'SELECT * FROM {table_name} LIMIT 10', conn)  # 读取前 10 条
-    print(df)
+    # 关闭数据库
+    conn.close()
 
+# 临时修改表格数据
+def modify_table():
+    
+    file_path = '数据库/movies.db'
+    table_name ='movies_basic'
+    
+    conn = sqlite3.connect(file_path)  # 打开数据库
+    cursor = conn.cursor()  # 创建游标
+    
+
+    # 删除 movieId 为 1107 的行
+    cursor.execute(f'DELETE FROM {table_name} WHERE movieId = 1107')
+    
+    # 提交修改
+    conn.commit()
+    
     # 关闭数据库
     conn.close()
 
 
 if __name__ == '__main__':
 
-    sqlite_demo()  # SQLite 用法示例
-    print()
+    #sqlite_demo()  # SQLite 用法示例
+    
+    #modify_table()  # 临时修改表格数据
 
-    creat_similarities_sqlite()  # 建立 similarities.db 数据库
-    print_table(similarity_data,'similarities')  # 查看 similarities 表格
-    print()
-
-    creat_movies_sqlite()  # 建立 movies.db 数据库
+    #creat_movies_basic_table()  # 创建 movies_basic 表
     print_table(movies_data,'movies_basic')  # 查看 movies_basic 表格
+
+    #creat_movies_detail_table()  # 创建 movies_detail 表格
     print_table(movies_data,'movies_detail')  # 查看 movies_detail 表格
+
+    #creat_similarities_sqlite()  # 建立 similarities.db 数据库
+    print_table(similarity_data,'similarities')  # 查看 similarities 表格
