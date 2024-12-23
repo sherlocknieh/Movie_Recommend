@@ -23,6 +23,7 @@ number_of_movies = 50  # 显示的电影数量
 @app.route('/')
 @app.route('/<category>')       # 分类查看
 def index(category='popular'):  # 默认显示热门电影
+    
     if category == 'top_rated':     # 从大于 7.5 分的电影中随机选取 12 部
         title = "高分电影"
         movies = df_movies[df_movies['vote_average'] >= 7.5].sample(number_of_movies).reset_index().to_dict('records')
@@ -54,8 +55,9 @@ def movie_detail(movie_id):
     conn = sqlite3.connect(similarities_path)    # 连接相似度数据库
     df = pd.read_sql_query(f"SELECT * FROM similarities WHERE movieId1={movie_id} or movieId2={movie_id} ORDER BY similarity DESC LIMIT 50", conn)
     results = df.to_dict('records')
+
     similar_movies = []
-    similarities = []
+
     for result in results:
         if result['MovieID1'] == movie_id:
             similar_movie = df_movies.loc[df_movies['movieId'] == result['MovieID2']].to_dict('records')[0]
@@ -67,10 +69,7 @@ def movie_detail(movie_id):
             similar_movie['similarity'] = result['Similarity']
     # 降序排列
     similar_movies = sorted(similar_movies, key=lambda x: x['similarity'], reverse=True)
-    # 保存到文件
-    with open('.test/similar_movies.json', 'w', encoding='utf-8') as f:
-        json.dump(similar_movies, f, ensure_ascii=False, indent=4)
-
+    
     conn.close()
     # 渲染模板
     return render_template('detail.html', movie=movie, similar_movies=similar_movies)
