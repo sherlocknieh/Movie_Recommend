@@ -6,7 +6,6 @@ import numpy as np
 import pandas as pd
 from itertools import combinations
 from operator import itemgetter
-import pymysql
 from sqlalchemy import create_engine
 
 def trans_df2dict(df):
@@ -48,7 +47,7 @@ def get_items_similarity(df, item_num):
     #W_df = pd.DataFrame(W, index=movie_id_map.values(), columns=movie_id_map.values())
     W_df = pd.DataFrame(W, index=list(movie_id_map_inv.values()), columns=list(movie_id_map_inv.values()))
     #W_df.to_csv('/home/hadoop/similarity_matrix.csv')
-    print(W)
+    #print(W)输出相似度矩阵
     # 将稀疏矩阵转换为长格式数据框
     long_format_df = W_df.stack().reset_index()
     long_format_df.columns = ['MovieID1', 'MovieID2', 'Similarity']
@@ -70,7 +69,7 @@ def get_items_similarity(df, item_num):
     print(long_format_df)
 
     # 如果需要，可以将结果保存到CSV文件
-    long_format_df.to_csv('data/movie_similarity_pairs.csv', index=False)
+    #long_format_df.to_csv('data/movie_similarity_pairs.csv', index=False)
 
 
     return long_format_df, movie_id_map, movie_id_map_inv
@@ -106,27 +105,39 @@ def get_user_interest_list(user_id, K, user_rating, w_dict, movie_id_map_inv):
 
 if __name__ == '__main__':
 
-    df = pd.read_csv('data/ratings.csv')
+    df = pd.read_csv('数据库/input/ratings.csv')
     # 
     item_num = df.movieId.nunique()
     user_rating = trans_df2dict(df)
     W, movie_id_map, movie_id_map_inv = get_items_similarity(df, item_num)
-    print(movie_id_map)
-    print(movie_id_map_inv)
-    db_config = {
-        'user': 'root',
-        'password': '123456',
-        'host': 'localhost',
-        'port':3306 ,  # 通常是3306
-        'database': 'Similarity'
-    }
+    #print(movie_id_map)
+    #print(movie_id_map_inv)
+#    db_config = {
+#        'user': 'root',
+#        'password': '123456',
+#        'host': 'localhost',
+#        'port':3306 ,  # 通常是3306
+#        'database': 'Similarity'
+#    }
 
     # 创建数据库连接引擎
-    engine = create_engine(
-        f'mysql+pymysql://{db_config["user"]}:{db_config["password"]}@{db_config["host"]}:{db_config["port"]}/{db_config["database"]}')
+ #   engine = create_engine(
+#      f'mysql+pymysql://{db_config["user"]}:{db_config["password"]}@{db_config["host"]}:{db_config["port"]}/{db_config["database"]}')
 
     # 将DataFrame上传到MySQL表（如果表不存在，则创建它）
-    table_name = 'movie_similarity'
-    W.to_sql(name=table_name, con=engine, if_exists='replace', index=False)
-
-    print(f"Data has been uploaded to the '{table_name}' table in the '{db_config['database']}' database.")
+ #   table_name = 'movie_similarity'
+#    W.to_sql(name=table_name, con=engine, if_exists='replace', index=False)
+    
+#    print(f"Data has been uploaded to the '{table_name}' table in the '{db_config['database']}' database.")
+# sqlite版本
+# SQLite 数据库文件路径（这将创建一个名为 'output.db' 的文件）
+db_path = '数据库/output/similarities.db'
+ 
+# 创建 SQLite 数据库连接引擎
+engine = create_engine(f'sqlite:///{db_path}')
+ 
+# 将 DataFrame 上传到 SQLite 表（如果表不存在，则创建它；如果已存在，则替换它）
+table_name = 'similarities'  # 表名设置为 'similarity'
+W.to_sql(name=table_name, con=engine, if_exists='replace', index=False)
+ 
+print(f"Data has been uploaded to the '{table_name}' table in the SQLite database at '{db_path}'.")

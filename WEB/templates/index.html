@@ -75,9 +75,9 @@
                     <div class="card h-100 movie-card">
                         <img src="{{ movie.poster_path }}" class="card-img-top movie-poster" alt="{{ movie.title }}">
                         <div class="card-body">
-                            <h5 class="card-title text-dark">{{ movie.title }}</h5>
+                            <h5 class="card-title text-dark">{{ movie.title_CN }}</h5>
                             {% if category == 'top_rated' %}
-                            <p class="card-text text-muted">评分: {{ movie.vote_average }}/100</p>
+                            <p class="card-text text-muted">评分: {{ movie.vote_average|round(1) }}/10</p>
                             {% elif category == 'latest' %}
                             <p class="card-text text-muted">上映日期: {{ movie.release_date }}</p>
                             {% endif %}

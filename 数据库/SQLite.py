@@ -88,13 +88,13 @@ def print_table(file_path,table_name):
 def save_to_csv(file_path,table_name):
     conn = sqlite3.connect(file_path)  # 打开数据库
     df = pd.read_sql_query(f'SELECT * FROM {table_name}', conn)  # 加载所有数据
-    df.to_csv(f'.测试/{table_name}.csv', index=False)  # 保存到 csv 文件
+    df.to_csv(f'.test/{table_name}.csv', index=False)  # 保存到 csv 文件
     conn.close()    # 关闭数据库
 
 if __name__ == '__main__':
 
     # 建立数据库
-    creat_movies_basic_table()   # 创建 movies_basic 表
+    #creat_movies_basic_table()   # 创建 movies_basic 表
     creat_movies_detail_table()  # 创建 movies_detail 表格
     creat_similarities_sqlite()  # 建立 similarities.db 数据库
 
