@@ -67,7 +67,7 @@
             <div class="col-md-9 movie-info">
                 <h1>{{ movie.title_CN }}</h1>
                 <p><strong>日期:</strong> {{ movie.release_date }}</p>
-                <p><strong>评分:</strong> {{ movie.vote_average }}/10</p>
+                <p><strong>评分:</strong> {{ movie.vote_average|round(1) }}/10</p>
                 <p><strong>投票数:</strong> {{ movie.vote_count|int }}</p>
                 <p class="mt-3"><strong>剧情简介:</strong></p>
                 <p>{{ movie.overview }}</p>
@@ -77,7 +77,7 @@
 
     <!-- 推荐电影列表 -->
     <div class="container mt-5">
-        <h2 class="mb-4">相似电影推荐</h2>
+        <h2 class="mb-4" style="text-align: right;">猜你喜欢</h2> <!-- 右对齐 -->
         <div class="row row-cols-2 row-cols-md-6 g-3">
             {% for recommended in similar_movies %}
             <div class="col">
@@ -85,8 +85,8 @@
                     <div class="card h-100 recommended-movie">
                         <img src="{{ recommended.poster_path }}" class="card-img-top recommended-poster" alt="{{ recommended.title }}">
                         <div class="card-body">
-                            <h5 class="card-title text-dark">{{ recommended.title }}</h5>
-                            <p class="card-text text-muted">相似度: {{ recommended.Similarity }}</p>
+                            <h5 class="card-title text-dark">{{ recommended.title_CN }}</h5>
+                            <p class="card-text text-muted">推荐度: {{ (recommended.similarity*100)|round(1) }}%</p> <!-- 乘以100后显示为百分数 -->
                         </div>
                     </div>
                 </a>

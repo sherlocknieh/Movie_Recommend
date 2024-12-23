@@ -9,26 +9,6 @@ movies_data = '数据库/output/movies.db'
 similarity_data = '数据库/output/similarities.db'
 
 
-# 建立 similarities.db 数据库
-def creat_similarities_sqlite():
-
-    # 打开/创建数据库
-    conn = sqlite3.connect(similarity_data)
-    
-    # 创建 similarities 空表 (如果已存在则不创建)
-    conn.execute('''CREATE TABLE IF NOT EXISTS similarities (
-                   movieId1     INT,
-                   movieId2     INT,
-                   Similarity   REAL
-                   )''')  # similarities 表格包含 movieId1, movieId2, Similarity 三列数据
-    
-    # 提交修改
-    conn.commit()
-
-    # 关闭数据库
-    conn.close()  
-
-# 建立 movies.db 数据库
 # 1. 创建 movies_basic 表
 def creat_movies_basic_table():
 
@@ -75,13 +55,16 @@ def creat_movies_detail_table():
     conn.close()
 
 
-# 打印表格数据
+# 打印数据
 def print_table(file_path,table_name):
     conn = sqlite3.connect(file_path)  # 打开数据库
-    df = pd.read_sql_query(f'SELECT * FROM {table_name}', conn)  # 加载所有数据
+    df = pd.read_sql_query(f'SELECT * FROM {table_name} WHERE MovieID1=1', conn)
+    # 按 Similarity 排序
+    df = df.sort_values(by='Similarity', ascending=False)  # 按 Similarity 排序
     print(f'\n[{table_name}]: \n')  # 打印表格名称
-    print(df.head(5))    #打印头 5 行数据
-    print(df.tail(5))    #打印尾 5 行数据
+    print(df)
+    # 保存到 csv 文件
+    df.to_csv(f'.test/{table_name}1.csv', index=False)  # 保存到 csv 文件
     conn.close()    # 关闭数据库
 
 # 保存表格数据到 csv 文件
@@ -95,10 +78,9 @@ if __name__ == '__main__':
 
     # 建立数据库
     #creat_movies_basic_table()   # 创建 movies_basic 表
-    creat_movies_detail_table()  # 创建 movies_detail 表格
-    creat_similarities_sqlite()  # 建立 similarities.db 数据库
+    #creat_movies_detail_table()  # 创建 movies_detail 表格
 
-    print_table(movies_data,'movies_basic')  # 查看 movies_basic 表格
-    print_table(movies_data,'movies_detail')  # 查看 movies_detail 表格
+    #print_table(movies_data,'movies_basic')  # 查看 movies_basic 表格
+    #print_table(movies_data,'movies_detail')  # 查看 movies_detail 表格
     print_table(similarity_data,'similarities')  # 查看 similarities 表格
     

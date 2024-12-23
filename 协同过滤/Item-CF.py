@@ -1,13 +1,17 @@
 # 基于物品的协同过滤算法
-# 输入：用户-电影-评分数据集: data/ratings.csv
-# 输出：电影-电影-相似度数据: data/similarity.csv
 
 import numpy as np
 import pandas as pd
+import sqlite3
 from itertools import combinations
 from operator import itemgetter
-from sqlalchemy import create_engine
 
+
+input_path  = '数据库/input/ratings.csv'
+output_path = '数据库/output/similarities.db'
+
+
+# DataFram转换为字典
 def trans_df2dict(df):
     user_rating = {}
     for row in df.values:
@@ -17,64 +21,66 @@ def trans_df2dict(df):
         user_rating[user_id][movie_id] = rating
     return user_rating
 
-
+# 创建电影ID到连续索引的映射
 def create_movie_id_map(df):
-    # 创建电影ID到连续索引的映射
-    movie_ids = df['movieId'].unique()
-    movie_id_map = {old_id: new_id + 1 for new_id, old_id in enumerate(movie_ids)}
-    return movie_id_map
+    
+    movie_ids = df['movieId'].unique()  # 所有电影ID列表
+    movie_id_map = {old_id: new_id + 1 for new_id, old_id in enumerate(movie_ids)}  # 电影ID映射
+    return movie_id_map # 电影ID到连续索引的映射
 
-
+# 计算物品相似度
 def get_items_similarity(df, item_num):
-    movie_id_map = create_movie_id_map(df)
-    inverted_table = df.groupby('userId')['movieId'].agg(lambda x: [movie_id_map[i] for i in x]).to_dict()
-    print(item_num)
-    # 创建反向映射，用于后续查找
-    movie_id_map_inv = {v: k for k, v in movie_id_map.items()}
 
-    W = np.zeros((item_num, item_num))
+    print(f'物品数量: {item_num}')
+
+    movie_id_map = create_movie_id_map(df)      # 创建电影ID到连续索引的映射
+    inverted_table = df.groupby('userId')['movieId'].agg(lambda x: [movie_id_map[i] for i in x]).to_dict()  # 反转数据集，以用户ID为键，电影ID列表为值
+
+    movie_id_map_inv = {v: k for k, v in movie_id_map.items()}  # 电影ID到原始ID的映射
+
+    W = np.zeros((item_num, item_num))  # 相似度矩阵
     count_item_users_num = {movie_id_map[id]: count for id, count in
-                            df.groupby('movieId')['userId'].count().to_dict().items()}
+                            df.groupby('movieId')['userId'].count().to_dict().items()}  # 物品被用户观看的次数
 
+    # 计算相似度矩阵
+    print('正在计算相似度矩阵...')
     for key, val in inverted_table.items():
         for per in combinations(val, 2):
-            W[per[0] - 1][per[1] - 1] += 1
-            W[per[1] - 1][per[0] - 1] += 1
+            W[per[0] - 1][per[1] - 1] += 1 
+            W[per[1] - 1][per[0] - 1] += 1 
 
+    # 计算相似度矩阵的归一化
+    print('正在归一化相似度矩阵...')
     for i in range(W.shape[0]):
         for j in range(W.shape[1]):
             W[i][j] /= np.sqrt(count_item_users_num.get(i + 1) * count_item_users_num.get(j + 1))
-    #W_df = pd.DataFrame(W, index=movie_id_map.values(), columns=movie_id_map.values())
-    W_df = pd.DataFrame(W, index=list(movie_id_map_inv.values()), columns=list(movie_id_map_inv.values()))
-    #W_df.to_csv('/home/hadoop/similarity_matrix.csv')
-    #print(W)输出相似度矩阵
+
+    print('相似度矩阵计算完成！')
+
+    # 转换为DataFrame格式
+    print('正在转换为DataFrame格式...')
+    W_df = pd.DataFrame(W, index=list(movie_id_map_inv.values()), columns=list(movie_id_map_inv.values()))  # 转换为DataFrame格式
+
     # 将稀疏矩阵转换为长格式数据框
+    print('正在转换为长格式数据框...')
     long_format_df = W_df.stack().reset_index()
     long_format_df.columns = ['MovieID1', 'MovieID2', 'Similarity']
 
-    # 过滤掉相似度为0的行
-    long_format_df = long_format_df[long_format_df['Similarity'] != 0]
+    # 只保留 MovieID1 < MovieID2 的情况
+    print('正在消除对称重复数据')
+    long_format_df = long_format_df[long_format_df['MovieID1'] < long_format_df['MovieID2']]
 
-    # 由于MovieID1和MovieID2是对称的，我们只需要保留一半的数据（避免重复）
-    # 这里我们保留MovieID1 < MovieID2的情况
-    # long_format_df = long_format_df[long_format_df['MovieID1'] < long_format_df['MovieID2']]
+    # 过滤掉相似度过低的行
+    print('正在过滤掉相似度为< 0.3 的数据')
+    long_format_df = long_format_df[long_format_df['Similarity'] >= 0.3]
 
     # 重置索引（可选，但通常是个好习惯）
+    print('正在重置索引...')
     long_format_df.reset_index(drop=True, inplace=True)
-
-    # （可选）根据相似度排序
-    #  long_format_df.sort_values(by='Similarity', ascending=False, inplace=True)
-
-    # 查看结果
-    print(long_format_df)
-
-    # 如果需要，可以将结果保存到CSV文件
-    #long_format_df.to_csv('data/movie_similarity_pairs.csv', index=False)
-
 
     return long_format_df, movie_id_map, movie_id_map_inv
 
-
+# 计算用户对物品的兴趣度
 def user_interest_with_items(user_id, item_id, K, user_rating, w_dict, movie_id_map):
     item_id_mapped = movie_id_map[item_id]
     interest = 0
@@ -90,7 +96,7 @@ def user_interest_with_items(user_id, item_id, K, user_rating, w_dict, movie_id_
 
     return interest
 
-
+# 计算用户兴趣列表
 def get_user_interest_list(user_id, K, user_rating, w_dict, movie_id_map_inv):
     rank = []
     for item_id_mapped in w_dict.keys():
@@ -105,39 +111,14 @@ def get_user_interest_list(user_id, K, user_rating, w_dict, movie_id_map_inv):
 
 if __name__ == '__main__':
 
-    df = pd.read_csv('数据库/input/ratings.csv')
-    # 
-    item_num = df.movieId.nunique()
-    user_rating = trans_df2dict(df)
-    W, movie_id_map, movie_id_map_inv = get_items_similarity(df, item_num)
-    #print(movie_id_map)
-    #print(movie_id_map_inv)
-#    db_config = {
-#        'user': 'root',
-#        'password': '123456',
-#        'host': 'localhost',
-#        'port':3306 ,  # 通常是3306
-#        'database': 'Similarity'
-#    }
-
-    # 创建数据库连接引擎
- #   engine = create_engine(
-#      f'mysql+pymysql://{db_config["user"]}:{db_config["password"]}@{db_config["host"]}:{db_config["port"]}/{db_config["database"]}')
-
-    # 将DataFrame上传到MySQL表（如果表不存在，则创建它）
- #   table_name = 'movie_similarity'
-#    W.to_sql(name=table_name, con=engine, if_exists='replace', index=False)
+    df = pd.read_csv(input_path)        # 读取数据集
+    item_num = df.movieId.nunique()     # 物品数量
+    user_rating = trans_df2dict(df)     # 转换为字典格式
+    long_format_df, movie_id_map, movie_id_map_inv = get_items_similarity(df, item_num)      # 计算物品相似度
+    print('正在写入数据库...')
+    conn = sqlite3.connect(output_path)                                                      # 连接SQLite数据库
+    long_format_df.to_sql(name='similarities', con=conn, if_exists='replace', index=False)   # 保存相似度矩阵到数据库
+    print('\n[similarities]\n')
+    print(long_format_df)
+    conn.close()
     
-#    print(f"Data has been uploaded to the '{table_name}' table in the '{db_config['database']}' database.")
-# sqlite版本
-# SQLite 数据库文件路径（这将创建一个名为 'output.db' 的文件）
-db_path = '数据库/output/similarities.db'
- 
-# 创建 SQLite 数据库连接引擎
-engine = create_engine(f'sqlite:///{db_path}')
- 
-# 将 DataFrame 上传到 SQLite 表（如果表不存在，则创建它；如果已存在，则替换它）
-table_name = 'similarities'  # 表名设置为 'similarity'
-W.to_sql(name=table_name, con=engine, if_exists='replace', index=False)
- 
-print(f"Data has been uploaded to the '{table_name}' table in the SQLite database at '{db_path}'.")
