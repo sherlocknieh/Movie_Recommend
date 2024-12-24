@@ -19,7 +19,7 @@ conn.close()
 
 
 # 主页
-number_of_movies = 50  # 显示的电影数量
+number_of_movies = 54  # 显示的电影数量
 @app.route('/')
 @app.route('/<category>')       # 分类查看
 def index(category='popular'):  # 默认显示热门电影
@@ -53,7 +53,7 @@ def movie_detail(movie_id):
     # 在数据库中获取最相似的50部电影
 
     conn = sqlite3.connect(similarities_path)    # 连接相似度数据库
-    df = pd.read_sql_query(f"SELECT * FROM similarities WHERE movieId1={movie_id} or movieId2={movie_id} ORDER BY similarity DESC LIMIT 50", conn)
+    df = pd.read_sql_query(f"SELECT * FROM similarities WHERE movieId1={movie_id} or movieId2={movie_id} ORDER BY similarity DESC LIMIT {number_of_movies}", conn)
     results = df.to_dict('records')
 
     similar_movies = []
@@ -85,8 +85,8 @@ def search():
     results = df_movies[(df_movies['title'].str.contains(query, case=False)) | (df_movies['title_CN'].str.contains(query, case=False))]
     # 去掉重复的电影
     results = results.drop_duplicates(subset='movieId')
-    # 随机选取 12 部, 转换为字典列表
-    movies = results.reset_index().to_dict('records')
+    # 选取 24 部, 转换为字典列表
+    movies = results.head(24).reset_index().to_dict('records')
     
     return render_template('index.html', movies=movies, category='search', title=f"搜索结果: {query}", query=query)
 

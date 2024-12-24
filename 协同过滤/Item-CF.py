@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 import sqlite3
+from tqdm import tqdm
 from itertools import combinations
 from operator import itemgetter
 
@@ -42,16 +43,16 @@ def get_items_similarity(df, item_num):
     count_item_users_num = {movie_id_map[id]: count for id, count in
                             df.groupby('movieId')['userId'].count().to_dict().items()}  # 物品被用户观看的次数
 
-    # 计算相似度矩阵
-    print('正在计算相似度矩阵...')
-    for key, val in inverted_table.items():
+    # 数据准备
+    print('正在准备数据...')
+    for key, val in tqdm(inverted_table.items()):
         for per in combinations(val, 2):
             W[per[0] - 1][per[1] - 1] += 1 
             W[per[1] - 1][per[0] - 1] += 1 
 
-    # 计算相似度矩阵的归一化
-    print('正在归一化相似度矩阵...')
-    for i in range(W.shape[0]):
+    # 计算相似度矩阵
+    print('正在计算相似度矩阵...')
+    for i in tqdm(range(W.shape[0])):
         for j in range(W.shape[1]):
             W[i][j] /= np.sqrt(count_item_users_num.get(i + 1) * count_item_users_num.get(j + 1))
 
@@ -71,8 +72,8 @@ def get_items_similarity(df, item_num):
     long_format_df = long_format_df[long_format_df['MovieID1'] < long_format_df['MovieID2']]
 
     # 过滤掉相似度过低的行
-    print('正在过滤掉相似度为< 0.3 的数据')
-    long_format_df = long_format_df[long_format_df['Similarity'] >= 0.3]
+    print('正在过滤掉相似度 < 0.4 的数据')
+    long_format_df = long_format_df[long_format_df['Similarity'] >= 0.4]
 
     # 重置索引（可选，但通常是个好习惯）
     print('正在重置索引...')
