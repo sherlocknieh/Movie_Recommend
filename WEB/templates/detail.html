@@ -86,7 +86,7 @@
                         <img src="{{ recommended.poster_path }}" class="card-img-top recommended-poster" alt="{{ recommended.title }}">
                         <div class="card-body">
                             <h5 class="card-title text-dark">{{ recommended.title_CN }}</h5>
-                            <p class="card-text text-muted">推荐度: {{ (recommended.similarity*100)|round(1) }}%</p> <!-- 乘以100后显示为百分数 -->
+                            <p class="card-text text-muted">推荐度: {{ (recommended.Similarity*100)|round(1) }}%</p> <!-- 乘以100后显示为百分数 -->
                         </div>
                     </div>
                 </a>
