@@ -24,11 +24,11 @@ number_of_movies = 54  # 显示的电影数量
 @app.route('/<category>')       # 分类查看
 def index(category='popular'):  # 默认显示热门电影
     
-    if category == 'top_rated':     # 从大于 7.5 分的电影中随机选取 number_of_movies 部
+    if category == 'top_rated':     # 从大于 8 分的电影中随机选取 number_of_movies 部
         title = "高分电影"
-        movies = df_movies[df_movies['vote_average'] >= 7.5].sample(number_of_movies).reset_index().to_dict('records')
+        movies = df_movies[df_movies['vote_average'] >= 8].sample(number_of_movies).reset_index().to_dict('records')
     elif category == 'latest':     # 从日期最新的 100 部电影中随机选取 number_of_movies 部
-        movies = df_movies.sort_values(by='release_date', ascending=False).head(100).sample(number_of_movies).reset_index().to_dict('records')
+        movies = df_movies.sort_values(by='release_date', ascending=False).head(100).head(number_of_movies).reset_index().to_dict('records')
         title = "最新电影"
     elif category == 'popular':      # 从打分人数最多的 100 部电影中随机选取 number_of_movies 部
         movies = df_movies.sort_values(by='vote_count', ascending=False).head(100).sample(number_of_movies).reset_index().to_dict('records')

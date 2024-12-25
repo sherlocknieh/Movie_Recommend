@@ -44,6 +44,10 @@
         .movie-info p {
             margin-bottom: 0.5rem;
         }
+        .btn-primary {
+            height: fit-content;
+            width: 80px;
+        }
     </style>
 </head>
 <body>
@@ -53,6 +57,11 @@
             <a href="/" class="btn btn-outline-primary">
                 <i class="bi bi-house-door"></i> 返回主页
             </a>
+            <form action="/search" method="get" class="d-flex">
+                <input type="search" name="query" class="form-control me-2" 
+                       placeholder="搜索电影..." value="{{ query if query is defined else '' }}">
+                <button type="submit" class="btn btn-primary">搜索</button>
+            </form>
         </div>
     </nav>
 
@@ -65,11 +74,13 @@
             </div>
             <!-- 右侧信息 -->
             <div class="col-md-9 movie-info">
-                <h1>{{ movie.title_CN }}</h1>
+                <h1>{{ movie.title_CN }} ({{ movie.release_date.split('-')[0] }})</h1>
+                <p><strong>原名:</strong> {{ movie.title }}</p>
                 <p><strong>日期:</strong> {{ movie.release_date }}</p>
-                <p><strong>评分:</strong> {{ movie.vote_average|round(1) }}/10</p>
-                <p><strong>投票数:</strong> {{ movie.vote_count|int }}</p>
-                <p class="mt-3"><strong>剧情简介:</strong></p>
+                <p><strong>评分:</strong> {{ movie.vote_average|round(1) }}/10 ({{ movie.vote_count }}票)</p>
+                <p><strong>IMDB链接:</strong> <a href="https://www.imdb.com/title/tt{{ movie.imdbId }}" target="_blank">tt{{ movie.imdbId }}</a></p>
+                <p><strong>类型:</strong> {{ movie.genres.replace('|', ' | ') }}</p>
+                <p><strong>剧情简介:</strong></p>
                 <p>{{ movie.overview }}</p>
             </div>
         </div>
@@ -85,8 +96,9 @@
                     <div class="card h-100 recommended-movie">
                         <img src="{{ recommended.poster_path }}" class="card-img-top recommended-poster" alt="{{ recommended.title }}">
                         <div class="card-body">
-                            <h5 class="card-title text-dark">{{ recommended.title_CN }}</h5>
-                            <p class="card-text text-muted">推荐度: {{ (recommended.Similarity*100)|round(1) }}%</p> <!-- 乘以100后显示为百分数 -->
+                            <h5 class="card-title text-dark">{{ recommended.title_CN }} ({{ recommended.release_date.split('-')[0] }})</h5> <!-- 标题 (年份) -->
+                            <p class="card-text text-muted">评分: {{ recommended.vote_average|round(1) }} ({{ recommended.vote_count }}票)</p> <!-- 评分 (打分人数) -->
+                            <!-- <p class="card-text text-muted">推荐度: {{ (recommended.Similarity*100)|round(1) }}%</p>  -->
                         </div>
                     </div>
                 </a>
