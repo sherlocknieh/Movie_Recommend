@@ -42,7 +42,7 @@ def get_movie_details(imdb_id):
                 title_name = data.get('name')
                 poster_path = data.get('still_path')
             else:                               # TMDB库中没有该影片
-                print(f"[*获取失败] TMDB库中没有该影片 [访问IMDB查看详情]: https://www.imdb.com/title/tt{imdb_id}/")
+                print(f"[*获取失败]\t[影片不在TMDB库中]\t[访问IMDB查看详情]: https://www.imdb.com/title/tt{imdb_id}/")
                 return None
             
             # 提取需要的数据
@@ -54,71 +54,46 @@ def get_movie_details(imdb_id):
                 'poster_path': f"https://image.tmdb.org/t/p/w500{poster_path}",
                 'overview': data.get('overview')
             }
-            #print(f"[+获取成功] [movieid: {movieid}]《{details['title_CN']}》({details['release_date'][:4]})\t评分: {details['vote_average']}")
             return result
+    
         else:
+            print(f"[*获取失败]\t[网络错误]\t{response.status_code}")
             return None
     except Exception as e:
-        print(f"[*获取失败] 网络错误: {str(e)}")
+        print(f"[*获取失败]\t[网络错误]\t{str(e)}")
         return None
 
 
 def fetch_and_save_movie(item):
-    """
-    根据电影记录获取详细信息并保存到数据库。
-    """
-    conn = sqlite3.connect(data_base_path)  # 每个进程需要单独连接数据库
+    conn = sqlite3.connect(data_base_path)  # 连接数据库
     movieid = item['movieId']
-    imdb_id = item['imdbId']
-
-    try:
-        details = get_movie_details(imdb_id)  # 调用爬虫获取详细信息
-        if details:
-            # 根据 get_movie_details 返回的结构生成 DataFrame
-            df = pd.DataFrame([{
-                'movieId': movieid,
-                'title_CN': details['title_CN'],
-                'release_date': details['release_date'],
-                'vote_average': details['vote_average'],
-                'vote_count': details['vote_count'],
-                'poster_path': details['poster_path'],
-                'overview': details['overview']
-            }])
-            df.to_sql('movies_detail', conn, if_exists='append', index=False)  # 保存到数据库
-        time.sleep(0.25)  # 避免请求过快, TMDB_API 限制每10秒钟请求不超过40次
-    except sqlite3.IntegrityError:
-        print(f"[movieid: {movieid}] 已存在，跳过。")
-    except Exception as e:
-        print(f"[movieid: {movieid}] 获取失败: {e}")
-    finally:
-        conn.close()  # 确保关闭连接
+    details = get_movie_details(item['imdbId'])  # 调用爬虫获取详细信息
+    if details:                           # 保存详细信息到数据库
+        df = pd.DataFrame([details], columns=list(details.keys()))           # 转换为 DataFrame
+        df['movieId'] = movieid                                              # 增加 movieId 列
+        df.to_sql('movies_detail', conn, if_exists='append', index=False)    # 保存到数据库
+        #print(f"[获取成功]\t《{details['title_CN']}》({details['release_date'][:4]})\t评分: {details['vote_average']}")
+    #time.sleep(1/50)     # API 请求频率限制, 50次/s
+    conn.close()         # 关闭连接
 
 
 if __name__ == "__main__":
 
     conn = sqlite3.connect(data_base_path)  # 连接数据库
+    # 根据 movieId 筛选出未爬取的电影
+    df = pd.read_sql_query("SELECT * FROM movies_basic WHERE movieId NOT IN (SELECT movieId FROM movies_detail)", conn)
+    items = df.to_dict("records")    # 转换为字典列
+    conn.close()  # 关闭数据库
 
-    # 根据 movieId 筛选出未爬取的电影, 即在 movies_basic 中有, 但 movies_detail 没有的数据
-    df_todo = pd.read_sql_query("SELECT * FROM movies_basic WHERE movieId NOT IN (SELECT movieId FROM movies_detail)", conn)
+    print(f"还剩 {len(items)} 部影片未获取")
 
-    # 遍历 df_todo 表, 调用爬虫获取详细信息, 保存到数据库
-    print(f"还剩 {len(df_todo)} 部影片未获取")
-
-    # 将 DataFrame 转换为字典列表以便并行处理
-    items = df_todo.to_dict(orient="records")
-
+    # 使用单进程爬取
+    # for item in items:
+    #     print(f"[imdb: {imdb_id} 正在获取...]", end=' ', flush=True)
+    #     fetch_and_save_movie(item)
+    
     # 使用多进程爬取
-    with Pool(processes=cpu_count()) as pool:
-        list(tqdm(pool.imap(fetch_and_save_movie, items), total=len(items)))
-    # 以下为原单进程代码
-    # for _, item in df_todo.iterrows():
-    #     movieid = item['movieId']
-    #     print(f"[movieid: {movieid:<6} 获取中]", end=' ')   # 打印进度, 6位数movieid,左对齐
-    #     details = get_movie_details(item['imdbId']) # 调用爬虫获取详细信息
-    #     if details:                                 # 保存详细信息到数据库
-    #         df = pd.DataFrame([details], columns=list(details.keys()))           # 转换为 DataFrame
-    #         df['movieId'] = movieid                                              # 增加 movieId 列
-    #         df.to_sql('movies_detail', conn, if_exists='append', index=False)    # 添加到 movies_detail 表
-    #     time.sleep(0.25)   # 避免请求过快, TMDB_API 限制每10秒钟请求不超过40次
-    # conn.close()
+    with Pool(processes=cpu_count()) as pool:    # 开启进程池
+        list(tqdm(pool.imap(fetch_and_save_movie, items), total=len(items)))  # 并行处理
+
     print("全部完成")
